@@ -1,6 +1,7 @@
 import networkx as nx  # Importa a biblioteca NetworkX para manipulação de grafos
 import pyttsx3         # Importa a biblioteca pyttsx3 para síntese de voz
 import speech_recognition as sr  # Importa a biblioteca speech_recognition para reconhecimento de fala
+import sys             # Importa a biblioteca sys para permitir a parada completa do programa
 
 # Classe que representa um beacon (ponto de referência)
 class Beacon:
@@ -55,6 +56,7 @@ class IndoorNavigation:
     def simulate_navigation(self, start_id, end_id):
         path = self.get_shortest_path(start_id, end_id)  # Encontra o caminho mais curto
         instructions = []
+        current_position = start_id  # Inicializa a posição atual da pessoa
 
         # Gera instruções para cada passo no caminho
         for i in range(len(path) - 1):
@@ -71,6 +73,24 @@ class IndoorNavigation:
                 instruction = f"Siga em frente usando o piso tátil como apoio até {to_beacon.name}."
             
             instructions.append(instruction)
+            
+            # Fala a instrução gerada
+            print(instruction)
+            self.engine.say(instruction)
+            self.engine.runAndWait()
+            
+            # Pede a posição atual do usuário
+            current_position = self.get_user_position()
+            if current_position == end_id:
+                print("Você chegou ao seu destino.")
+                self.engine.say("Você chegou ao seu destino.")
+                self.engine.runAndWait()
+                sys.exit()  # Encerra o programa completamente
+            elif current_position != to_beacon.id:
+                print(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Por favor, verifique sua localização.")
+                self.engine.say(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Por favor, verifique sua localização.")
+                self.engine.runAndWait()
+                sys.exit()  # Encerra o programa completamente
 
         return instructions
 
@@ -112,6 +132,17 @@ class IndoorNavigation:
             if beacon.name.lower() == name.lower():
                 return beacon.id
         return None
+
+    # Pede ao usuário a posição atual digitando no console
+    def get_user_position(self):
+        try:
+            position = int(input("O beacon identificou que a posição atual é (ID do beacon): "))
+            return position
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número inteiro correspondente ao ID do beacon.")
+            self.engine.say("Entrada inválida. Por favor, digite um número inteiro correspondente ao ID do beacon.")
+            self.engine.runAndWait()
+            return self.get_user_position()
 
 # Configuração do grafo com os beacons e suas posições
 beacons = [
@@ -164,27 +195,28 @@ edges = [
 for edge in edges:
     navigator.add_path(*edge)
 
-# Interação com o usuário para escolher o ponto de partida e destino por voz
-start_name = navigator.listen_for_beacon_name("Diga o nome do local de partida:")
+# Interação com o usuário para escolher o ponto de partida e destino
+start_id = navigator.get_user_position()  # Pede o ID do beacon de partida
 end_name = navigator.listen_for_beacon_name("Diga o nome do local de destino:")
 
-# Converte os nomes dos locais para seus respectivos IDs
-start_id = navigator.get_beacon_id_by_name(start_name)
+# Converte o nome do local de destino para seu respectivo ID
 end_id = navigator.get_beacon_id_by_name(end_name)
 
 # Simulação da navegação do ponto de partida ao ponto de destino
 if start_id is not None and end_id is not None:
-    instructions = navigator.simulate_navigation(start_id, end_id)
-    navigator.speak_instructions(instructions)
+    if start_id == end_id:
+        print("Você já está no seu destino.")
+        navigator.engine.say("Você já está no seu destino.")
+        navigator.engine.runAndWait()
+        sys.exit()  # Encerra o programa completamente
+    else:
+        instructions = navigator.simulate_navigation(start_id, end_id)
+        navigator.speak_instructions(instructions)
 else:
     print("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.say("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.runAndWait()
 
-#Melhorias
-#1. colocar o nome das salas ao invés de números (X)
-#2. pensar melhor sobre comunição com beacons ()
-#3. pensar melhoria de banheiros por exemplo ()
-#4. pensar na comunicação das instruções (distâncias, pontos de referência, etc.) (X)
-#5. criar o grafo por completo (X)
-#6. corrigir a direção (X)
+
+# 1. Corrigir caso da pessoa não estar no local correto - Dar continuidade do caminho errado ou mandar parar
+# 2. Banheiro
