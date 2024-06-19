@@ -122,3 +122,11 @@ else:
     print("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.say("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.runAndWait()
+
+#Melhorias
+#1. colocar o nome das salas ao invés de números
+#2. pensar melhor sobre comunição com beacons
+#3. pensar melhoria de banheiros por exemplo
+#4. pensar na comunicação das instruções (distâncias, pontos de referência, etc.)
+#5. criar o grafo por completo
+#6. corrigir a direção
