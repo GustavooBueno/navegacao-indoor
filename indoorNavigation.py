@@ -54,45 +54,48 @@ class IndoorNavigation:
 
     # Simula a navegação gerando instruções a partir do caminho mais curto
     def simulate_navigation(self, start_id, end_id):
-        path = self.get_shortest_path(start_id, end_id)  # Encontra o caminho mais curto
-        instructions = []
-        current_position = start_id  # Inicializa a posição atual da pessoa
+        while True:
+            path = self.get_shortest_path(start_id, end_id)  # Encontra o caminho mais curto
+            instructions = []
+            current_position = start_id  # Inicializa a posição atual da pessoa
 
-        # Gera instruções para cada passo no caminho
-        for i in range(len(path) - 1):
-            from_beacon = self.beacons[path[i]]  # Beacon atual
-            to_beacon = self.beacons[path[i + 1]]  # Próximo beacon
-            if i + 2 < len(path):
-                next_beacon = self.beacons[path[i + 2]]  # Beacon depois do próximo
-                direction_instruction = self.get_direction_instruction(from_beacon.id, to_beacon.id, next_beacon.id)
-                if direction_instruction:
-                    instruction = f"Siga em frente até o {to_beacon.name} e {direction_instruction}."
+            # Gera instruções para cada passo no caminho
+            for i in range(len(path) - 1):
+                from_beacon = self.beacons[path[i]]  # Beacon atual
+                to_beacon = self.beacons[path[i + 1]]  # Próximo beacon
+                if i + 2 < len(path):
+                    next_beacon = self.beacons[path[i + 2]]  # Beacon depois do próximo
+                    direction_instruction = self.get_direction_instruction(from_beacon.id, to_beacon.id, next_beacon.id)
+                    if direction_instruction:
+                        instruction = f"Siga em frente até o {to_beacon.name} e {direction_instruction}."
+                    else:
+                        instruction = f"Siga em frente usando o piso tátil como apoio até {to_beacon.name}."
                 else:
                     instruction = f"Siga em frente usando o piso tátil como apoio até {to_beacon.name}."
-            else:
-                instruction = f"Siga em frente usando o piso tátil como apoio até {to_beacon.name}."
-            
-            instructions.append(instruction)
-            
-            # Fala a instrução gerada
-            print(instruction)
-            self.engine.say(instruction)
-            self.engine.runAndWait()
-            
-            # Pede a posição atual do usuário
-            current_position = self.get_user_position()
-            if current_position == end_id:
-                print("Você chegou ao seu destino.")
-                self.engine.say("Você chegou ao seu destino.")
-                self.engine.runAndWait()
-                sys.exit()  # Encerra o programa completamente
-            elif current_position != to_beacon.id:
-                print(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Por favor, verifique sua localização.")
-                self.engine.say(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Por favor, verifique sua localização.")
-                self.engine.runAndWait()
-                sys.exit()  # Encerra o programa completamente
 
-        return instructions
+                instructions.append(instruction)
+
+                # Fala a instrução gerada
+                print(instruction)
+                self.engine.say(instruction)
+                self.engine.runAndWait()
+
+                # Pede a posição atual do usuário
+                current_position = self.get_user_position()
+                if current_position == end_id:
+                    print("Você chegou ao seu destino.")
+                    self.engine.say("Você chegou ao seu destino.")
+                    self.engine.runAndWait()
+                    sys.exit()  # Encerra o programa completamente
+                elif current_position != to_beacon.id:
+                    print(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Recalculando rota.")
+                    self.engine.say(f"Foi informado que você está em {current_position}, mas deveria estar em {to_beacon.id}. Recalculando rota.")
+                    self.engine.runAndWait()
+                    start_id = current_position  # Atualiza o ponto de partida
+                    break  # Sai do loop interno para recalcular a rota
+
+            if current_position == end_id:
+                return instructions  # Encerra a simulação ao chegar ao destino
 
     # Fala as instruções geradas
     def speak_instructions(self, instructions):
@@ -217,6 +220,4 @@ else:
     navigator.engine.say("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.runAndWait()
 
-
-# 1. Corrigir caso da pessoa não estar no local correto - Dar continuidade do caminho errado ou mandar parar
-# 2. Banheiro
+# 1. Melhoria - Banheiro mais próximo
