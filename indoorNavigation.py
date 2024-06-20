@@ -52,8 +52,25 @@ class IndoorNavigation:
         }
         return directions.get((from_id, to_id, next_id), None)
 
+    # Encontra o banheiro mais próximo (6 ou 16) do ponto de partida
+    def get_nearest_bathroom(self, start_id):
+        path_to_6 = self.get_shortest_path(start_id, 6)
+        path_to_16 = self.get_shortest_path(start_id, 16)
+        if len(path_to_6) <= len(path_to_16):
+            return 6
+        else:
+            return 16
+
     # Simula a navegação gerando instruções a partir do caminho mais curto
     def simulate_navigation(self, start_id, end_id):
+        # Verifica se o destino é "banheiro 6" ou "banheiro 16"
+        if end_id in [self.get_beacon_id_by_name("Banheiro 6"), self.get_beacon_id_by_name("Banheiro 16")]:
+            end_id = self.get_nearest_bathroom(start_id)
+            end_name = self.beacons[end_id].name
+            print(f"O banheiro mais próximo é o {end_name}. Navegando para lá.")
+            self.engine.say(f"O banheiro mais próximo é o {end_name}. Navegando para lá.")
+            self.engine.runAndWait()
+
         while True:
             path = self.get_shortest_path(start_id, end_id)  # Encontra o caminho mais curto
             instructions = []
@@ -219,5 +236,3 @@ else:
     print("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.say("Não foi possível obter os IDs dos Beacons corretamente.")
     navigator.engine.runAndWait()
-
-# 1. Melhoria - Banheiro mais próximo
